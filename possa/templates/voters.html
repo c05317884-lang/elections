@@ -1,0 +1,159 @@
+<!-- election_project/election_app/templates/voters.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="voters-section" class="page-section block">
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Voters</h2>
+            <button id="add-voter-button" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Add Voter
+            </button>
+        </div>
+       
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-gray-500 border-b">
+                        <th class="pb-3">Voter</th>
+                        <th class="pb-3">Sex</th>
+                        <th class="pb-3">Status</th>
+                        <th class="pb-3">Major/Minor</th>
+                        <th class="pb-3">Department</th>
+                        <th class="pb-3">Dept ID</th>
+                        <th class="pb-3">Password</th>
+                        <th class="pb-3">Vote Status</th>
+                        <th class="pb-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="voters-table-body" class="divide-y">
+                    {% for voter in voters %}
+                    <tr>
+                        <td class="py-4">
+                            <div class="flex items-center">
+                                <img src="{% if voter.photo %}{{ voter.photo.url }}{% else %}https://ui-avatars.com/api/?name={{ voter.name }}&background=random&color=fff{% endif %}" alt="{{ voter.name }}" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <p class="font-medium">{{ voter.name }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4">{{ voter.sex }}</td>
+                        <td class="py-4">{{ voter.status }}</td>
+                        <td class="py-4">{{ voter.major_minor }}</td>
+                        <td class="py-4">{{ voter.department }}</td>
+                        <td class="py-4">{{ voter.dept_id }}</td>
+                        <td class="py-4">****</td>
+                        <td class="py-4">{% if voter.has_voted %}Voted{% else %}Not Voted{% endif %}</td>
+                        <td class="py-4">
+                            <div class="flex space-x-2">
+                                <button class="text-indigo-600 hover:text-indigo-900 voter-edit-btn" data-id="{{ voter.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form method="post" action="{% url 'delete_voter' voter.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-red-600 hover:text-red-900">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- Voter Modal -->
+<div id="voter-modal" class="modal">
+    <div class="modal-content">
+        <span id="voter-close-modal" class="close cursor-pointer float-right text-2xl">&times;</span>
+        <h2 id="voter-modal-title" class="text-xl font-bold mb-4">Add Voter</h2>
+        <form id="voter-form" method="post" action="{% url 'add_voter' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="voter-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                <input type="text" id="voter-name" name="voter-name" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="voter-sex" class="block text-sm font-medium text-gray-700">Sex</label>
+                <select id="voter-sex" name="voter-sex" class="mt-1 p-2 w-full border rounded">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="voter-status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select id="voter-status" name="voter-status" class="mt-1 p-2 w-full border rounded">
+                    <option value="Freshman">Freshman</option>
+                    <option value="Sophomore">Sophomore</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Senior">Senior</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="voter-major-minor" class="block text-sm font-medium text-gray-700">Major/Minor</label>
+                <select id="voter-major-minor" name="voter-major-minor" class="mt-1 p-2 w-full border rounded">
+                    <option value="Major">Major</option>
+                    <option value="Minor">Minor</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="voter-department" class="block text-sm font-medium text-gray-700">Department</label>
+                <input type="text" id="voter-department" name="voter-department" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="voter-dept-id" class="block text-sm font-medium text-gray-700">Department ID Number</label>
+                <input type="text" id="voter-dept-id" name="voter-dept-id" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="voter-password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="voter-password" name="voter-password" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="voter-photo" class="block text-sm font-medium text-gray-700">Photo</label>
+                <input type="file" id="voter-photo" name="voter-photo" accept="image/*" class="mt-1">
+            </div>
+            <input type="hidden" id="voter-edit-id" name="edit_id">
+            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
+        </form>
+    </div>
+</div>
+<script>
+    const modal = document.getElementById('voter-modal');
+    const closeBtn = document.getElementById('voter-close-modal');
+    const title = document.getElementById('voter-modal-title');
+    const form = document.getElementById('voter-form');
+    const editId = document.getElementById('voter-edit-id');
+
+    document.getElementById('add-voter-button').addEventListener('click', function() {
+        title.textContent = 'Add Voter';
+        form.action = "{% url 'add_voter' %}";
+        editId.value = '';
+        // Clear fields
+        modal.style.display = 'block';
+    });
+
+    document.querySelectorAll('.voter-edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            title.textContent = 'Edit Voter';
+            form.action = `/voters/edit/${id}/`;
+            editId.value = id;
+            // Pre-fill if needed
+            modal.style.display = 'block';
+        });
+    });
+
+    closeBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

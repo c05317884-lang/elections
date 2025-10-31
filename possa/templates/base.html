@@ -1,0 +1,179 @@
+<!-- election_project/election_app/templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Copy styles from admin template */
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .main-content {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                height: 100vh;
+                z-index: 50;
+            }
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        .page-section {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar bg-indigo-800 text-white w-64 flex flex-col">
+            <div class="p-4 flex items-center justify-between border-b border-indigo-700">
+                <div class="flex items-center">
+                    <i class="fas fa-vote-yea text-2xl mr-3"></i>
+                    <span class="sidebar-text text-xl font-bold">Election Admin</span>
+                </div>
+                <button id="toggleSidebar" class="text-white focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+           
+            <nav class="flex-1 p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="{% url 'dashboard' %}" data-page="dashboard" class="menu-link flex items-center p-2 rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-tachometer-alt w-6"></i>
+                            <span class="sidebar-text ml-3">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'candidates' %}" data-page="candidates" class="menu-link flex items-center p-2 rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-users w-6"></i>
+                            <span class="sidebar-text ml-3">Candidates</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'voters' %}" data-page="voters" class="menu-link flex items-center p-2 rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-user-check w-6"></i>
+                            <span class="sidebar-text ml-3">Voters</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'results' %}" data-page="results" class="menu-link flex items-center p-2 rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-chart-bar w-6"></i>
+                            <span class="sidebar-text ml-3">Results</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'settings' %}" data-page="settings" class="menu-link flex items-center p-2 rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-cog w-6"></i>
+                            <span class="sidebar-text ml-3">Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+           
+            <div class="p-4 border-t border-indigo-700">
+                <div class="flex items-center">
+                    <img id="admin-avatar" src="{% if settings.admin_avatar %}{{ settings.admin_avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ settings.admin_name }}&background=0D8ABC&color=fff{% endif %}"
+                         alt="Admin" class="w-10 h-10 rounded-full">
+                    <div class="sidebar-text ml-3">
+                        <p id="admin-name" class="font-medium">{{ settings.admin_name }}</p>
+                        <p id="admin-role" class="text-sm text-indigo-300">{{ settings.admin_role }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+       
+        <!-- Main Content -->
+        <div class="main-content flex-1 flex flex-col ml-0 md:ml-64">
+            <!-- Header -->
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex justify-between items-center p-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Election Dashboard</h1>
+                        <p class="text-gray-600">Manage your department election</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <input id="search-input" type="text" placeholder="Search..." class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                        <button id="notification-button" class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ notifications }}</span>
+                        </button>
+                        <a href="{% url 'logout' %}" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Logout</a>
+                    </div>
+                </div>
+            </header>
+           
+            <!-- Page Sections -->
+            <main class="flex-1 p-6 overflow-y-auto">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+    <!-- Modals go here if shared -->
+    <script>
+        // Shared JS for sidebar, etc.
+        document.getElementById('toggleSidebar').addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            sidebar.classList.toggle('collapsed');
+            if (window.innerWidth >= 768) {
+                if (sidebar.classList.contains('collapsed')) {
+                    mainContent.classList.remove('md:ml-64');
+                    mainContent.classList.add('md:ml-[70px]');
+                } else {
+                    mainContent.classList.remove('md:ml-[70px]');
+                    mainContent.classList.add('md:ml-64');
+                }
+            }
+        });
+        // More JS as needed
+    </script>
+</body>
+</html>

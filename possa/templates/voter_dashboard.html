@@ -1,0 +1,62 @@
+<!-- election_project/election_app/templates/voter_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cast Your Vote</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container bg-white rounded-lg shadow-md p-8">
+        {% if success %}
+            <div id="success-message" class="text-center">
+                <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+                <h2 class="text-2xl font-bold mb-2">Vote Cast Successfully!</h2>
+                <p class="text-gray-600">Thank you for voting.</p>
+                <a href="{% url 'login' %}" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded">Back to Login</a>
+            </div>
+        {% else %}
+            <div id="voting-form">
+                <h2 class="text-2xl font-bold mb-6 text-center">Cast Your Vote</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    <div id="candidates-list" class="space-y-4">
+                        {% for candidate in candidates %}
+                            <div class="flex items-center p-4 border rounded">
+                                <input type="radio" name="candidate" value="{{ candidate.id }}" class="mr-4">
+                                <img src="{% if candidate.party_photo %}{{ candidate.party_photo.url }}{% else %}https://ui-avatars.com/api/?name=Party&background=FF0000&color=fff{% endif %}" alt="Party" class="w-8 h-8 rounded-full mr-2">
+                                <img src="{% if candidate.photo %}{{ candidate.photo.url }}{% else %}https://ui-avatars.com/api/?name={{ candidate.name }}&background=random&color=fff{% endif %}" alt="{{ candidate.name }}" class="w-8 h-8 rounded-full mr-2">
+                                <div>
+                                    <p class="font-medium">{{ candidate.name }}</p>
+                                    <p class="text-sm text-gray-500">{{ candidate.position }} - {{ candidate.department }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mt-6">Submit Vote</button>
+                </form>
+                {% if messages %}
+                    {% for message in messages %}
+                        <p class="text-red-500 text-center mt-4">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!-- election_project/election_app/templates/settings.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="settings-section" class="page-section block">
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Settings</h2>
+        {% if messages %}
+            {% for message in messages %}
+                <p class="text-green-500">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="admin-name-input" class="block text-sm font-medium text-gray-700">Admin Name</label>
+                <input type="text" id="admin-name-input" name="admin-name-input" value="{{ settings.admin_name }}" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="admin-role-input" class="block text-sm font-medium text-gray-700">Admin Role</label>
+                <input type="text" id="admin-role-input" name="admin-role-input" value="{{ settings.admin_role }}" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="admin-photo" class="block text-sm font-medium text-gray-700">Admin Photo</label>
+                <input type="file" id="admin-photo" name="admin-photo" accept="image/*" class="mt-1">
+            </div>
+            <div class="mb-4">
+                <label for="election-start-date" class="block text-sm font-medium text-gray-700">Election Start Date</label>
+                <input type="datetime-local" id="election-start-date" name="election-start-date" value="{{ settings.start_date|date:'Y-m-d\TH:i' }}" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="election-end-date" class="block text-sm font-medium text-gray-700">Election End Date</label>
+                <input type="datetime-local" id="election-end-date" name="election-end-date" value="{{ settings.end_date|date:'Y-m-d\TH:i' }}" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Save Settings</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

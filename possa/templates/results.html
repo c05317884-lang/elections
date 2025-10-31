@@ -1,0 +1,126 @@
+<!-- election_project/election_app/templates/results.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="results-section" class="page-section block">
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Election Results</h2>
+            <div class="flex space-x-2">
+                <a href="{% url 'download_pdf' %}" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg">Download PDF</a>
+                <a href="{% url 'download_word' %}" class="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg">Download Word</a>
+                <button id="results-export-button" class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg">Export CSV</button>
+            </div>
+        </div>
+        <div class="h-96 mb-8">
+            <canvas id="resultsChartLarge"></canvas>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Votes by Year Level (%)</h2>
+            <div class="h-80">
+                <canvas id="yearLevelChart"></canvas>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Votes by Major/Minor (%)</h2>
+            <div class="h-80">
+                <canvas id="majorMinorChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    let resultsChartLarge, yearLevelChart, majorMinorChart;
+
+    function updateCharts(data) {
+        resultsChartLarge.data.labels = data.candidates.map(c => c.name);
+        resultsChartLarge.data.datasets[0].data = data.candidates.map(c => c.votes);
+        resultsChartLarge.update();
+
+        yearLevelChart.data.datasets[0].data = [
+            data.year_percent.Freshman || 0,
+            data.year_percent.Sophomore || 0,
+            data.year_percent.Junior || 0,
+            data.year_percent.Senior || 0
+        ];
+        yearLevelChart.update();
+
+        majorMinorChart.data.datasets[0].data = [
+            data.major_percent.Major || 0,
+            data.major_percent.Minor || 0
+        ];
+        majorMinorChart.update();
+    }
+
+    function fetchUpdates() {
+        fetch('{% url "results_json" %}')
+            .then(response => response.json())
+            .then(data => {
+                updateCharts(data);
+            })
+            .catch(error => console.error('Error fetching updates:', error));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctxLarge = document.getElementById('resultsChartLarge').getContext('2d');
+        resultsChartLarge = new Chart(ctxLarge, {
+            type: 'bar',
+            data: {
+                labels: [{% for c in candidates %}'{{ c.name }}', {% endfor %}],
+                datasets: [{
+                    label: 'Votes',
+                    data: [{% for c in candidates %}{{ c.votes }}, {% endfor %}],
+                    backgroundColor: ['rgba(79, 70, 229, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(129, 140, 248, 0.7)'],
+                    borderColor: ['rgba(79, 70, 229, 1)', 'rgba(99, 102, 241, 1)', 'rgba(129, 140, 248, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        const yearCtx = document.getElementById('yearLevelChart').getContext('2d');
+        yearLevelChart = new Chart(yearCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Freshman', 'Sophomore', 'Junior', 'Senior'],
+                datasets: [{
+                    data: ['{{ year_percent.Freshman|default:0 }}', '{{ year_percent.Sophomore|default:0 }}', '{{ year_percent.Junior|default:0 }}', '{{ year_percent.Senior|default:0 }}'],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        const majorCtx = document.getElementById('majorMinorChart').getContext('2d');
+        majorMinorChart = new Chart(majorCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Major', 'Minor'],
+                datasets: [{
+                    data: ['{{ major_percent.Major|default:0 }}', '{{ major_percent.Minor|default:0 }}'],
+                    backgroundColor: ['#FF6384', '#36A2EB']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Start polling for updates every 5 seconds
+        setInterval(fetchUpdates, 5000);
+    });
+</script>
+{% endblock %}

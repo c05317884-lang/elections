@@ -1,0 +1,141 @@
+<!-- election_project/election_app/templates/candidates.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="candidates-section" class="page-section block">
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Candidates</h2>
+            <button id="add-candidate-button" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Add Candidate
+            </button>
+        </div>
+       
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-gray-500 border-b">
+                        <th class="pb-3">Candidate</th>
+                        <th class="pb-3">Position</th>
+                        <th class="pb-3">Votes</th>
+                        <th class="pb-3">Status</th>
+                        <th class="pb-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="candidates-table-body" class="divide-y">
+                    {% for candidate in candidates %}
+                    <tr>
+                        <td class="py-4">
+                            <div class="flex items-center">
+                                <img src="{% if candidate.party_photo %}{{ candidate.party_photo.url }}{% else %}https://ui-avatars.com/api/?name=Party&background=FF0000&color=fff{% endif %}" alt="Party" class="w-10 h-10 rounded-full mr-3">
+                                <img src="{% if candidate.photo %}{{ candidate.photo.url }}{% else %}https://ui-avatars.com/api/?name={{ candidate.name }}&background=random&color=fff{% endif %}" alt="{{ candidate.name }}" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <p class="font-medium">{{ candidate.name }}</p>
+                                    <p class="text-sm text-gray-500">{{ candidate.department }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4">{{ candidate.position }}</td>
+                        <td class="py-4">
+                            <div class="flex items-center">
+                                <span class="font-medium mr-2">{{ candidate.votes }}</span>
+                                <div class="w-24 bg-gray-200 rounded-full h-2">
+                                   <div class="bg-{{ candidate.status_color }}-600 h-2 rounded-full"
+     style="width: {{ candidate.percentage }}%"></div>
+
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4">
+                            <span class="px-2 py-1 bg-{{ candidate.status_color }}-100 text-{{ candidate.status_color }}-800 text-xs rounded-full">{{ candidate.status }}</span>
+                        </td>
+                        <td class="py-4">
+                            <div class="flex space-x-2">
+                                <button class="text-indigo-600 hover:text-indigo-900 candidate-edit-btn" data-id="{{ candidate.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form method="post" action="{% url 'delete_candidate' candidate.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-red-600 hover:text-red-900">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- Candidate Modal -->
+<div id="candidate-modal" class="modal">
+    <div class="modal-content">
+        <span id="candidate-close-modal" class="close cursor-pointer float-right text-2xl">&times;</span>
+        <h2 id="candidate-modal-title" class="text-xl font-bold mb-4">Add Candidate</h2>
+        <form id="candidate-form" method="post" action="{% url 'add_candidate' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="candidate-party-photo" class="block text-sm font-medium text-gray-700">Party Photo</label>
+                <input type="file" id="candidate-party-photo" name="candidate-party-photo" accept="image/*" class="mt-1">
+            </div>
+            <div class="mb-4">
+                <label for="candidate-name" class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" id="candidate-name" name="candidate-name" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="candidate-department" class="block text-sm font-medium text-gray-700">Department</label>
+                <input type="text" id="candidate-department" name="candidate-department" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="candidate-position" class="block text-sm font-medium text-gray-700">Position</label>
+                <input type="text" id="candidate-position" name="candidate-position" class="mt-1 p-2 w-full border rounded">
+            </div>
+            <div class="mb-4">
+                <label for="candidate-photo" class="block text-sm font-medium text-gray-700">Photo</label>
+                <input type="file" id="candidate-photo" name="candidate-photo" accept="image/*" class="mt-1">
+            </div>
+            <input type="hidden" id="candidate-edit-id" name="edit_id">
+            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
+        </form>
+    </div>
+</div>
+<script>
+    // Modal JS
+    const modal = document.getElementById('candidate-modal');
+    const closeBtn = document.getElementById('candidate-close-modal');
+    const title = document.getElementById('candidate-modal-title');
+    const form = document.getElementById('candidate-form');
+    const editId = document.getElementById('candidate-edit-id');
+
+    document.getElementById('add-candidate-button').addEventListener('click', function() {
+        title.textContent = 'Add Candidate';
+        form.action = "{% url 'add_candidate' %}";
+        editId.value = '';
+        // Clear fields
+        modal.style.display = 'block';
+    });
+
+    document.querySelectorAll('.candidate-edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            title.textContent = 'Edit Candidate';
+            form.action = `/candidates/edit/${id}/`;
+            editId.value = id;
+            // Pre-fill fields via AJAX or hidden data
+            modal.style.display = 'block';
+        });
+    });
+
+    closeBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

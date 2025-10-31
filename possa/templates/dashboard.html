@@ -1,0 +1,167 @@
+<!-- election_project/election_app/templates/dashboard.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="dashboard-section" class="page-section block">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6 card-hover transition-all duration-300">
+            <div class="flex items-center">
+                <div class="p-3 rounded-lg bg-blue-100 text-blue-600">
+                    <i class="fas fa-users text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Total Candidates</p>
+                    <h3 id="total-candidates" class="text-2xl font-bold">{{ total_candidates }}</h3>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-green-500">
+                <i class="fas fa-arrow-up mr-1"></i>
+                <span id="candidates-new">0 new this week</span> <!-- Can make dynamic -->
+            </div>
+        </div>
+       
+        <div class="bg-white rounded-xl shadow-md p-6 card-hover transition-all duration-300">
+            <div class="flex items-center">
+                <div class="p-3 rounded-lg bg-green-100 text-green-600">
+                    <i class="fas fa-user-check text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Total Voters</p>
+                    <h3 id="total-voters" class="text-2xl font-bold">{{ total_voters }}</h3>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-green-500">
+                <i class="fas fa-arrow-up mr-1"></i>
+                <span id="voters-new">0 registered today</span> <!-- Dynamic if needed -->
+            </div>
+        </div>
+       
+        <div class="bg-white rounded-xl shadow-md p-6 card-hover transition-all duration-300">
+            <div class="flex items-center">
+                <div class="p-3 rounded-lg bg-purple-100 text-purple-600">
+                    <i class="fas fa-vote-yea text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Votes Cast</p>
+                    <h3 id="votes-cast" class="text-2xl font-bold">{{ votes_cast }}</h3>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="participation-bar" class="bg-purple-600 h-2 rounded-full" style="width: {{ participation }}%"></div>
+                </div>
+                <p id="participation-text" class="text-xs text-gray-500 mt-1">{{ participation }}% participation</p>
+            </div>
+        </div>
+       
+        <div class="bg-white rounded-xl shadow-md p-6 card-hover transition-all duration-300">
+            <div class="flex items-center">
+                <div class="p-3 rounded-lg bg-red-100 text-red-600">
+                    <i class="fas fa-clock text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500" id="time-label">{{ election_status.label }}</p>
+                    <h3 id="time-remaining" class="text-2xl font-bold">00:00:00:00</h3> <!-- JS will update -->
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-red-500">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                <span id="time-ends">{% if election_status.ended %}Election has ended{% else %}{% if election_status.started %}Ends on {{ settings.end_date|date:"l" }}{% else %}Starts on {{ settings.start_date|date:"l" }}{% endif %}{% endif %}</span>
+            </div>
+        </div>
+    </div>
+   
+    <!-- Charts and Tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Results Chart -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Current Results</h2>
+                <div class="flex space-x-2">
+                    <button id="live-button" class="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-lg">Live</button>
+                    <button id="export-button" class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg">Export</button>
+                </div>
+            </div>
+            <div class="h-80">
+                <canvas id="resultsChart"></canvas>
+            </div>
+        </div>
+       
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Recent Activity</h2>
+            <div id="recent-activity" class="space-y-4">
+                {% for activity in activities %}
+                    <div class="flex items-start">
+                        <div class="p-2 rounded-lg bg-{{ activity.color }}-100 text-{{ activity.color }}-600 mr-3">
+                            <i class="fas {{ activity.icon }}"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">{{ activity.type }}</p>
+                            <p class="text-sm text-gray-500">{{ activity.description }}</p>
+                            <p class="text-xs text-gray-400">{{ activity.time|timesince }} ago</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Countdown JS
+    function formatCountdown(diff) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        return `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    const targetString = '{{ election_status.target|default:"" }}';
+    const timeRemainingElement = document.getElementById('time-remaining');
+    if (!targetString) {
+        timeRemainingElement.textContent = '{{ election_status.status }}';
+    } else {
+        let targetDate = new Date(targetString);
+        let interval = setInterval(() => {
+            const now = new Date();
+            const diff = targetDate - now;
+            if (diff <= 0) {
+                clearInterval(interval);
+                timeRemainingElement.textContent = '00:00:00:00';
+            } else {
+                timeRemainingElement.textContent = formatCountdown(diff);
+            }
+        }, 1000);
+        // Initial update
+        const initialNow = new Date();
+        const initialDiff = targetDate - initialNow;
+        timeRemainingElement.textContent = initialDiff > 0 ? formatCountdown(initialDiff) : '00:00:00:00';
+    }
+
+    // Chart JS
+    const ctx = document.getElementById('resultsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for c in candidates %}'{{ c.name }}', {% endfor %}],
+            datasets: [{
+                label: 'Votes',
+                data: [{% for c in candidates %}{{ c.votes }}, {% endfor %}],
+                backgroundColor: ['rgba(79, 70, 229, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(129, 140, 248, 0.7)'], // Expand as needed
+                borderColor: ['rgba(79, 70, 229, 1)', 'rgba(99, 102, 241, 1)', 'rgba(129, 140, 248, 1)'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+{% endblock %}

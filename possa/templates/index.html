@@ -1,0 +1,76 @@
+<!-- election_project/election_app/templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="container max-w-4xl mx-auto p-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Department Election Candidates</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for candidate in candidates %}
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center mb-4">
+                        <img src="{% if candidate.party_photo %}{{ candidate.party_photo.url }}{% else %}https://ui-avatars.com/api/?name=Party&background=FF0000&color=fff{% endif %}" alt="Party" class="w-16 h-16 rounded-full mr-4">
+                        <img src="{% if candidate.photo %}{{ candidate.photo.url }}{% else %}https://ui-avatars.com/api/?name={{ candidate.name }}&background=random&color=fff{% endif %}" alt="{{ candidate.name }}" class="w-16 h-16 rounded-full">
+                    </div>
+                    <h2 class="text-xl font-bold">{{ candidate.name }}</h2>
+                    <p class="text-gray-600">{{ candidate.position }} - {{ candidate.department }}</p>
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: '{{ candidate.percentage }}%';"></div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">{{ candidate.percentage }}% of votes</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="mt-12">
+            <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="text-red-500 text-center mb-4">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+            <form method="post" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
+                    <select id="role" name="role" class="mt-1 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="voter">Voter</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div id="voter-fields">
+                    <div class="mb-4">
+                        <label for="dept-id" class="block text-sm font-medium text-gray-700">Department ID</label>
+                        <input type="text" id="dept-id" name="dept_id" class="mt-1 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div id="admin-fields" class="hidden">
+                    <div class="mb-4">
+                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                        <input type="text" id="username" name="username" class="mt-1 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" name="password" class="mt-1 p-2 w-full border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Login</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('role').addEventListener('change', function() {
+            const role = this.value;
+            document.getElementById('voter-fields').classList.toggle('hidden', role !== 'voter');
+            document.getElementById('admin-fields').classList.toggle('hidden', role !== 'admin');
+        });
+    </script>
+</body>
+</html>
